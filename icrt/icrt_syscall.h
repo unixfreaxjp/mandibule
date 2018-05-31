@@ -27,16 +27,21 @@
     #define _syscall_do(sys_nbr, rettype)                                   \
     {                                                                       \
         rettype ret = 0;                                                    \
+        register int r0 asm ("ebx") = (int)a1;                              \
+        register int r1 asm ("ecx") = (int)a2;                              \
+        register int r2 asm ("edx") = (int)a3;                              \
+        register int r3 asm ("esi") = (int)a4;                              \
+        register int r4 asm ("edi") = (int)a5;                              \
+        register int r5 asm ("ebp") = (int)a6;                              \
+        register int r7 asm ("eax") = sys_nbr;                              \
         asm volatile                                                        \
         (                                                                   \
             "int $0x80;"                                                    \
-            : "=a" (ret)                                                    \
-            : "0"(sys_nbr), "bx"(a1), "cx"(a2),                             \
-              "dx"(a3),     "S"(a4),  "D"(a5), "bp"(a6)                     \
+            : "=r" (ret)                                                    \
+            : "r"(r7), "r"(r0), "r"(r1), "r"(r2), "r"(r3), "r"(r4), "r"(r5) \
         );                                                                  \
         return ret;                                                         \
     }
-
 
 // x86_64 aka amd64
 #elif __x86_64__
@@ -164,34 +169,36 @@ static inline rettype sys_name(void)                                        \
 // define desired syscalls
 // ========================================================================== //
 
-_syscall0(SYS_getpid,   _getpid,    int);
+_syscall0(SYS_getpid,   _getpid,    int)
 
-_syscall1(SYS_exit,     _exit,      int,        int);
-_syscall1(SYS_close,    _close,     int,        int);
-_syscall1(SYS_brk,      _brk,       long,       unsigned long);
+_syscall1(SYS_exit,     __exit,     int,        int)
+void _exit(int c) { __exit(c); }
 
-_syscall2(SYS_munmap,   _munmap,    long,       char*, int);
+_syscall1(SYS_close,    _close,     int,        int)
+_syscall1(SYS_brk,      _brk,       long,       unsigned long)
 
-_syscall3(SYS_read,     _read,      ssize_t,    int, void *, size_t);
-_syscall3(SYS_write,    _write,     ssize_t,    int, const void *, size_t);
-_syscall3(SYS_lseek,    _lseek,     long,       int, long, int);
-_syscall3(SYS_mprotect, _mprotect,  long,       void*, long, int);
+_syscall2(SYS_munmap,   _munmap,    long,       char*, int)
+
+_syscall3(SYS_read,     _read,      ssize_t,    int, void *, size_t)
+_syscall3(SYS_write,    _write,     ssize_t,    int, const void *, size_t)
+_syscall3(SYS_lseek,    _lseek,     long,       int, long, int)
+_syscall3(SYS_mprotect, _mprotect,  long,       void*, long, int)
 
 #if __i386__ || __arm__ || __x86_64__
-_syscall3(SYS_open,     _open,      int,        char *, int, int);
+_syscall3(SYS_open,     _open,      int,        char *, int, int)
 #else
-_syscall4(SYS_openat,   _openat,    int,        int, char *, int, int);
+_syscall4(SYS_openat,   _openat,    int,        int, char *, int, int)
 #define AT_FDCWD        -100
 #define _open(a, b, c) _openat(AT_FDCWD, a, b, c)
 #endif
 
-_syscall4(SYS_ptrace,   _ptrace,    long,       int, int, void*, void*);
-_syscall4(SYS_wait4,    _wait4,     int,        int, int*, int, void*);
+_syscall4(SYS_ptrace,   _ptrace,    long,       int, int, void*, void*)
+_syscall4(SYS_wait4,    _wait4,     int,        int, int*, int, void*)
 
 #if __i386__ || __arm__
-    _syscall6(SYS_mmap2, _mmap, void *, void *, long, int, int, int, long);
+    _syscall6(SYS_mmap2, _mmap, void *, void *, long, int, int, int, long)
 #else
-    _syscall6(SYS_mmap, _mmap, void *, void *, long, int, int, int, long);
+    _syscall6(SYS_mmap, _mmap, void *, void *, long, int, int, int, long)
 #endif
 
 
